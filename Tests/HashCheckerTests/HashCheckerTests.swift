@@ -1,36 +1,29 @@
 import XCTest
 import class Foundation.Bundle
+import CommonCrypto
+import CryptoKit
 
-final class HashCheckerTests: XCTestCase {
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-
-        // Some of the APIs that we use below are available in macOS 10.13 and above.
-        guard #available(macOS 10.13, *) else {
-            return
+final class HashChecks: XCTestCase {
+    func testSHA256() throws {
+        let file = "/Users/pradyun/Documents/SCCommands.json"
+        let length = Int(CC_SHA256_DIGEST_LENGTH)
+        
+        let fileData = try Data(contentsOf: URL(string: "file://\(file)")!)
+        let digest = UnsafeMutablePointer<UInt8>.allocate(capacity: length)
+        defer { digest.deallocate() }
+        
+        fileData.withUnsafeBytes { (buffer) -> Void in
+            CC_SHA256(buffer.baseAddress!, CC_LONG(buffer.count), digest)
         }
-
-        // Mac Catalyst won't have `Process`, but it is supported for executables.
-        #if !targetEnvironment(macCatalyst)
-
-        let fooBinary = productsDirectory.appendingPathComponent("HashChecker")
-
-        let process = Process()
-        process.executableURL = fooBinary
-
-        let pipe = Pipe()
-        process.standardOutput = pipe
-
-        try process.run()
-        process.waitUntilExit()
-
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        let output = String(data: data, encoding: .utf8)
-
-        XCTAssertEqual(output, "Hello, world!\n")
-        #endif
+        
+        print("HASH: ", String(data: Data(bytes: digest, count: length), encoding: .utf8) ?? "nop")
+    }
+    
+    func testCryptoKitSHA256() {
+        let file = "/Users/pradyun/Documents/SCCommands.json"
+        let fileData = try! Data(contentsOf: URL(string: "file://\(file)")!)
+        
+        print(SHA256.hash(data: fileData))
     }
 
     /// Returns path to the built products directory.
